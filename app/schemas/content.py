@@ -2,6 +2,15 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.get("/sample")
+def sample_route():
+    return {"msg": "Content API is live"}
+
+
 class PromptCreate(BaseModel):
     input_text: str
 

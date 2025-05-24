@@ -1,0 +1,45 @@
+dpg-d0ouaqumcj7s73djg6mg-a
+
+5432
+
+marketing_db_q5m8
+
+marketing_db_q5m8_user
+
+WOkaXyabMM0GTassQXzpM7FyEHZTyOwF
+
+postgresql://marketing_db_q5m8_user:WOkaXyabMM0GTassQXzpM7FyEHZTyOwF@dpg-d0ouaqumcj7s73djg6mg-a.oregon-postgres.render.com/marketing_db_q5m8
+
+postgresql://marketing_db_q5m8_user:WOkaXyabMM0GTassQXzpM7FyEHZTyOwF@dpg-d0ouaqumcj7s73djg6mg-a.oregon-postgres.render.com/marketing_db_q5m8
+
+
+-----redis
+
+REDIS_URL rediss://username:password@host:port
+
+REDIS_URL rediss://default:ATHXAAIjcDE0MTJiODI5MTc4ZjI0Mjk1YWNjYjU0NTExOWMwOTllM3AxMA@brief-adder-12759.upstash.io:6379
+
+https://brief-adder-12759.upstash.io
+
+r = redis.Redis(
+  host='brief-adder-12759.upstash.io',
+  port=6379,
+  password='ATHXAAIjcDE0MTJiODI5MTc4ZjI0Mjk1YWNjYjU0NTExOWMwOTllM3AxMA',
+  ssl=True
+)
+
+r.set('foo', 'bar')
+print(r.get('foo'))
+
+ATHXAAIjcDE0MTJiODI5MTc4ZjI0Mjk1YWNjYjU0NTExOWMwOTllM3AxMA
+
+---------gmail
+
+uytw jkqi oybv xsma
+
+----google client id
+
+81909038451-s5okmjt6ic5nrp1mbj4om15nd5ka93jl.apps.googleusercontent.com
+
+
+
