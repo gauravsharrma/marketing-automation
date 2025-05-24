@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Automation Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-lg" v-if="isAuthenticated">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <h1 class="text-xl font-bold text-gray-800">Marketing Automation</h1>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a @click="currentView = 'dashboard'" 
+                               :class="['inline-flex items-center px-1 pt-1 border-b-2', currentView === 'dashboard' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700']">
+                                Dashboard
+                            </a>
+                            <a @click="currentView = 'generate'" 
+                               :class="['inline-flex items-center px-1 pt-1 border-b-2', currentView === 'generate' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700']">
+                                Generate Content
+                            </a>
+                            <a v-if="isAdmin" @click="currentView = 'admin'" 
+                               :class="['inline-flex items-center px-1 pt-1 border-b-2', currentView === 'admin' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700']">
+                                Admin Panel
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <button @click="logout" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Auth Forms -->
+        <div v-if="!isAuthenticated" class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-md w-full space-y-8">
+                <div>
+                    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        {{ isRegistering ? 'Create your account' : 'Sign in to your account' }}
+                    </h2>
+                </div>
+                <form class="mt-8 space-y-6" @submit.prevent="isRegistering ? register() : login()">
+                    <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="email-address" class="sr-only">Email address</label>
+                            <input v-model="auth.email" type="email" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Email address">
+                        </div>
+                        <div v-if="isRegistering">
+                            <label for="name" class="sr-only">Full name</label>
+                            <input v-model="auth.name" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Full name">
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">Password</label>
+                            <input v-model="auth.password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Password">
+                        </div>
+                    </div>
+
+                    <div v-if="showOtpInput">
+                        <label for="otp" class="sr-only">OTP</label>
+                        <input v-model="auth.otp" type="text" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Enter OTP">
+                    </div>
+
+                    <div>
+                        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            {{ isRegistering ? 'Register' : 'Sign in' }}
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center">
+                    <button @click="isRegistering = !isRegistering" class="font-medium text-indigo-600 hover:text-indigo-500">
+                        {{ isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main v-else class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- Dashboard -->
+            <div v-if="currentView === 'dashboard'" class="px-4 py-6 sm:px-0">
+                <div class="border-4 border-dashed border-gray-200 rounded-lg p-4">
+                    <h2 class="text-2xl font-bold mb-4">Your Activity</h2>
+                    
+                    <!-- Prompts History -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold mb-4">Recent Prompts</h3>
+                        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                            <ul class="divide-y divide-gray-200">
+                                <li v-for="prompt in userPrompts" :key="prompt.id" class="px-4 py-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">{{ prompt.input_text }}</p>
+                                            <p class="text-sm text-gray-500">{{ new Date(prompt.created_at).toLocaleString() }}</p>
+                                        </div>
+                                        <button @click="viewPromptDetails(prompt)" class="text-indigo-600 hover:text-indigo-900">View Details</button>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Posts History -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Recent Posts</h3>
+                        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                            <ul class="divide-y divide-gray-200">
+                                <li v-for="post in userPosts" :key="post.id" class="px-4 py-4">
+                                    <div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <i :class="['fab', post.platform === 'facebook' ? 'fa-facebook' : 'fa-linkedin', 'text-xl mr-2']"></i>
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-900">{{ post.platform }}</p>
+                                                    <p class="text-sm text-gray-500">{{ new Date(post.timestamp).toLocaleString() }}</p>
+                                                </div>
+                                            </div>
+                                            <span :class="['px-2 py-1 text-xs rounded-full', 
+                                                post.status === 'published' ? 'bg-green-100 text-green-800' : 
+                                                post.status === 'failed' ? 'bg-red-100 text-red-800' : 
+                                                'bg-yellow-100 text-yellow-800']">
+                                                {{ post.status }}
+                                            </span>
+                                        </div>
+                                        <p v-if="post.error" class="mt-2 text-sm text-red-600">Error: {{ post.error }}</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Content -->
+            <div v-if="currentView === 'generate'" class="px-4 py-6 sm:px-0">
+                <div class="border-4 border-dashed border-gray-200 rounded-lg p-4">
+                    <h2 class="text-2xl font-bold mb-4">Generate Content</h2>
+                    
+                    <!-- Prompt Input -->
+                    <div class="mb-8">
+                        <label for="prompt" class="block text-sm font-medium text-gray-700">Enter your blog topic</label>
+                        <div class="mt-1">
+                            <textarea v-model="newPrompt" rows="3" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+                        </div>
+                        <button @click="generateBlog" class="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            Generate Blog
+                        </button>
+                    </div>
+
+                    <!-- Generated Content -->
+                    <div v-if="generatedContent" class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Generated Blog</h3>
+                            <div class="bg-white p-4 rounded-md shadow">
+                                <div v-html="formatContent(generatedContent.blog_output)"></div>
+                            </div>
+                        </div>
+
+                        <div v-if="socialPreviews">
+                            <h3 class="text-lg font-semibold mb-2">Social Media Previews</h3>
+                            
+                            <!-- Facebook Preview -->
+                            <div class="bg-white p-4 rounded-md shadow mb-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fab fa-facebook text-blue-600 text-xl mr-2"></i>
+                                    <h4 class="font-medium">Facebook Post</h4>
+                                </div>
+                                <p class="text-gray-800">{{ socialPreviews.facebook }}</p>
+                                <button @click="publishPost('facebook', socialPreviews.facebook)" class="mt-2 inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                    Publish to Facebook
+                                </button>
+                            </div>
+
+                            <!-- LinkedIn Preview -->
+                            <div class="bg-white p-4 rounded-md shadow">
+                                <div class="flex items-center mb-2">
+                                    <i class="fab fa-linkedin text-blue-700 text-xl mr-2"></i>
+                                    <h4 class="font-medium">LinkedIn Post</h4>
+                                </div>
+                                <p class="text-gray-800">{{ socialPreviews.linkedin }}</p>
+                                <button @click="publishPost('linkedin', socialPreviews.linkedin)" class="mt-2 inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-700 hover:bg-blue-800">
+                                    Publish to LinkedIn
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div v-if="currentView === 'admin' && isAdmin" class="px-4 py-6 sm:px-0">
+                <div class="border-4 border-dashed border-gray-200 rounded-lg p-4">
+                    <h2 class="text-2xl font-bold mb-4">Admin Dashboard</h2>
+
+                    <!-- Users List -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold mb-4">Users</h3>
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="user in users" :key="user.id">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="['px-2 py-1 text-xs rounded-full', user.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800']">
+                                                {{ user.is_verified ? 'Verified' : 'Pending' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <button @click="viewUserActivity(user.id)" class="text-indigo-600 hover:text-indigo-900">View Activity</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- System Stats -->
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="bg-white overflow-hidden shadow rounded-lg">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-users text-gray-400"></i>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                                            <dd class="text-lg font-medium text-gray-900">{{ users.length }}</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white overflow-hidden shadow rounded-lg">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-file-alt text-gray-400"></i>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Prompts</dt>
+                                            <dd class="text-lg font-medium text-gray-900">{{ contentStats.total_prompts }}</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white overflow-hidden shadow rounded-lg">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-share-alt text-gray-400"></i>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Posts</dt>
+                                            <dd class="text-lg font-medium text-gray-900">{{ contentStats.total_posts }}</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    isAuthenticated: false,
+                    isRegistering: false,
+                    showOtpInput: false,
+                    isAdmin: false,
+                    currentView: 'dashboard',
+                    auth: {
+                        email: '',
+                        name: '',
+                        password: '',
+                        otp: ''
+                    },
+                    newPrompt: '',
+                    generatedContent: null,
+                    socialPreviews: null,
+                    userPrompts: [],
+                    userPosts: [],
+                    users: [],
+                    contentStats: {
+                        total_prompts: 0,
+                        total_posts: 0
+                    }
+                }
+            },
+            methods: {
+                async register() {
+                    if (this.showOtpInput) {
+                        // Verify OTP
+                        const response = await fetch('/api/auth/verify-otp', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: this.auth.email,
+                                otp: this.auth.otp
+                            })
+                        });
+
+                        if (response.ok) {
+                            this.showOtpInput = false;
+                            this.isRegistering = false;
+                            alert('Registration successful! Please login.');
+                        } else {
+                            alert('Invalid OTP. Please try again.');
+                        }
+                    } else {
+                        // Register user
+                        const response = await fetch('/api/auth/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: this.auth.email,
+                                name: this.auth.name,
+                                password: this.auth.password
+                            })
+                        });
+
+                        if (response.ok) {
+                            this.showOtpInput = true;
+                            alert('Please check your email for OTP verification.');
+                        } else {
+                            alert('Registration failed. Please try again.');
+                        }
+                    }
+                },
+                async login() {
+                    const formData = new FormData();
+                    formData.append('username', this.auth.email);
+                    formData.append('password', this.auth.password);
+
+                    const response = await fetch('/api/auth/token', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        localStorage.setItem('token', data.access_token);
+                        this.isAuthenticated = true;
+                        this.checkRole();
+                        this.loadUserData();
+                    } else {
+                        alert('Login failed. Please check your credentials.');
+                    }
+                },
+                logout() {
+                    localStorage.removeItem('token');
+                    this.isAuthenticated = false;
+                    this.isAdmin = false;
+                    this.currentView = 'dashboard';
+                },
+                async checkRole() {
+                    const response = await this.authenticatedFetch('/api/auth/me');
+                    if (response.ok) {
+                        const user = await response.json();
+                        this.isAdmin = user.role === 'admin';
+                    }
+                },
+                async loadUserData() {
+                    // Load user's prompts
+                    const promptsResponse = await this.authenticatedFetch('/api/content/my-prompts');
+                    if (promptsResponse.ok) {
+                        this.userPrompts = await promptsResponse.json();
+                    }
+
+                    // Load user's posts
+                    const postsResponse = await this.authenticatedFetch('/api/content/my-posts');
+                    if (postsResponse.ok) {
+                        this.userPosts = await postsResponse.json();
+                    }
+
+                    // Load admin data if admin
+                    if (this.isAdmin) {
+                        this.loadAdminData();
+                    }
+                },
+                async loadAdminData() {
+                    // Load users
+                    const usersResponse = await this.authenticatedFetch('/api/admin/users');
+                    if (usersResponse.ok) {
+                        this.users = await usersResponse.json();
+                    }
+
+                    // Load content stats
+                    const statsResponse = await this.authenticatedFetch('/api/admin/content-stats');
+                    if (statsResponse.ok) {
+                        this.contentStats = await statsResponse.json();
+                    }
+                },
+                async generateBlog() {
+                    const response = await this.authenticatedFetch('/api/content/generate-blog', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ input_text: this.newPrompt })
+                    });
+
+                    if (response.ok) {
+                        this.generatedContent = await response.json();
+                        this.generateSocialPreviews();
+                    } else {
+                        alert('Failed to generate blog content. Please try again.');
+                    }
+                },
+                async generateSocialPreviews() {
+                    if (!this.generatedContent) return;
+
+                    const response = await this.authenticatedFetch(`/api/content/preview-social-posts/${this.generatedContent.id}`);
+                    if (response.ok) {
+                        this.socialPreviews = await response.json();
+                    } else {
+                        alert('Failed to generate social media previews. Please try again.');
+                    }
+                },
+                async publishPost(platform, content) {
+                    const response = await this.authenticatedFetch('/api/content/publish-social-post', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt_id: this.generatedContent.id,
+                            platform,
+                            content
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert(`Successfully published to ${platform}!`);
+                        this.loadUserData();
+                    } else {
+                        alert(`Failed to publish to ${platform}. Please try again.`);
+                    }
+                },
+                async viewUserActivity(userId) {
+                    const response = await this.authenticatedFetch(`/api/admin/user/${userId}/activity`);
+                    if (response.ok) {
+                        const activity = await response.json();
+                        console.log('User Activity:', activity);
+                        // TODO: Show activity in a modal or detailed view
+                    }
+                },
+                formatContent(content) {
+                    return content.replace(/\n/g, '<br>');
+                },
+                authenticatedFetch(url, options = {}) {
+                    const token = localStorage.getItem('token');
+                    return fetch(url, {
+                        ...options,
+                        headers: {
+                            ...options.headers,
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                }
+            },
+            mounted() {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    this.isAuthenticated = true;
+                    this.checkRole();
+                    this.loadUserData();
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html> 
